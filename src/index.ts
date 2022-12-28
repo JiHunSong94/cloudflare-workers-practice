@@ -18,6 +18,8 @@ export interface Env {
   // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
   // MY_BUCKET: R2Bucket;
 }
+// @ts-ignore
+import home from "./home.html";
 
 export default {
   async fetch(
@@ -25,6 +27,14 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    return new Response("It works!");
+    const url = new URL(request.url);
+    if (url.pathname === "/") {
+      return new Response(home, {
+        headers: {
+          "Content-Type": "text/html;chartset=utf-8",
+        },
+      });
+    }
+    return new Response(null, { status: 404 });
   },
 };
