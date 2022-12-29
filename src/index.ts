@@ -20,6 +20,7 @@ export interface Env {
 }
 // @ts-ignore
 import home from "./home.html";
+import { makeBadge } from "./utils";
 
 function handlerHome() {
   return new Response(home, {
@@ -47,9 +48,9 @@ async function handlerVisit(searchParams: URLSearchParams, env: Env) {
     await env.DB.put(page, value + "");
   }
 
-  return new Response(JSON.stringify({ visits: value }), {
+  return new Response(makeBadge(value), {
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "image/svg+xml;charset=urf-8",
     },
   });
 }
