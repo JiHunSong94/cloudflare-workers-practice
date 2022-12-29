@@ -9,14 +9,8 @@
  */
 
 export interface Env {
-  // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
   DB: KVNamespace;
-  //
-  // Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-  // MY_DURABLE_OBJECT: DurableObjectNamespace;
-  //
-  // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-  // MY_BUCKET: R2Bucket;
+  COUNTER: DurableObjectNamespace;
 }
 // @ts-ignore
 import home from "./home.html";
@@ -33,9 +27,27 @@ function handleNotFound() {
   return new Response(null, { status: 404 });
 }
 
-const obj = {
-  count: 0,
-};
+export class CounterObject {
+  counter: number;
+  constructor() {
+    this.counter = 0;
+  }
+  async fetch(request: Request) {
+    const { pathname } = new URL(request.url);
+    switch (pathname) {
+      case "/":
+        return new Response(this.counter);
+      case "/+":
+        this.counter++;
+        return new Response(this.counter);
+      case "/-":
+        this.counter--;
+        return new Response(this.counter);
+      default:
+        return handleNotFound();
+    }
+  }
+}
 
 export default {
   async fetch(
@@ -43,13 +55,9 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    const { pathname, searchParams } = new URL(request.url);
-    switch (pathname) {
-      case "/":
-        return handlerHome();
-
-      default:
-        return handleNotFound();
-    }
+    const id = env.COUNTER.idFromName("counter");
+    const durableObject = env.COUNTER.get(id);
+    const response = await durableObject.fetch(request);
+    return response;
   },
 };

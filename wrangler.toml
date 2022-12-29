@@ -5,3 +5,8 @@ compatibility_date = "2022-12-27"
 kv_namespaces = [
     { binding = "DB" , id = "b42d68a3c1214d238b9df2192804a349", preview_id = "f5c536476f29454f97217cc1920050cc" }
 ]
+
+[durable_objects]
+bindings = [
+    { name = "COUNTER", class_name = "CounterObject" }
+]
