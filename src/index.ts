@@ -20,7 +20,6 @@ export interface Env {
 }
 // @ts-ignore
 import home from "./home.html";
-import { makeBadge } from "./utils";
 
 function handlerHome() {
   return new Response(home, {
@@ -30,34 +29,13 @@ function handlerHome() {
   });
 }
 
-function handleBadRequest() {
-  return new Response(null, { status: 400 });
-}
-
-async function handlerVisit(searchParams: URLSearchParams, env: Env) {
-  const page = searchParams.get("page");
-  if (!page) {
-    return handleBadRequest();
-  }
-  const kvPage = await env.DB.get(page);
-  let value = 1;
-  if (!kvPage) {
-    await env.DB.put(page, value + "");
-  } else {
-    value = parseInt(kvPage) + 1;
-    await env.DB.put(page, value + "");
-  }
-
-  return new Response(makeBadge(value), {
-    headers: {
-      "Content-Type": "image/svg+xml;charset=urf-8",
-    },
-  });
-}
-
 function handleNotFound() {
   return new Response(null, { status: 404 });
 }
+
+const obj = {
+  count: 0,
+};
 
 export default {
   async fetch(
@@ -69,8 +47,7 @@ export default {
     switch (pathname) {
       case "/":
         return handlerHome();
-      case "/visit":
-        return handlerVisit(searchParams, env);
+
       default:
         return handleNotFound();
     }
