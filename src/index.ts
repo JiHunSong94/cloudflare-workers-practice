@@ -10,41 +10,45 @@
 
 export interface Env {
   DB: KVNamespace;
-  COUNTER: DurableObjectNamespace;
+  CHAT: DurableObjectNamespace;
 }
 // @ts-ignore
 import home from "./home.html";
 
-function handlerHome() {
-  return new Response(home, {
-    headers: {
-      "Content-Type": "text/html;chartset=utf-8",
-    },
-  });
-}
+export class ChatRoom {
+  state: DurableObjectState;
+  constructor(state: DurableObjectState, env: Env) {
+    this.state = state;
+  }
+  handleHome() {
+    return new Response(home, {
+      headers: {
+        "Content-Type": "text/html;chartset=utf-8",
+      },
+    });
+  }
+  handleNotFound() {
+    return new Response(null, { status: 404 });
+  }
 
-function handleNotFound() {
-  return new Response(null, { status: 404 });
-}
-
-export class CounterObject {
-  counter: number;
-  constructor() {
-    this.counter = 0;
+  handleConnect(request: Request) {
+    const pairs = new WebSocketPair();
+    this.handleWebSocket(pairs[1]);
+    return new Response(null, { status: 101, webSocket: pairs[0] });
+  }
+  handleWebSocket(webSocket: WebSocket) {
+    webSocket.accept();
+    webSocket.send(JSON.stringify({ message: "hello from backend!" }));
   }
   async fetch(request: Request) {
     const { pathname } = new URL(request.url);
     switch (pathname) {
       case "/":
-        return new Response(this.counter);
-      case "/+":
-        this.counter++;
-        return new Response(this.counter);
-      case "/-":
-        this.counter--;
-        return new Response(this.counter);
+        return this.handleHome();
+      case "/connect":
+        return this.handleConnect(request);
       default:
-        return handleNotFound();
+        return this.handleNotFound();
     }
   }
 }
@@ -55,8 +59,8 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<Response> {
-    const id = env.COUNTER.idFromName("counter");
-    const durableObject = env.COUNTER.get(id);
+    const id = env.CHAT.idFromName("CHAT");
+    const durableObject = env.CHAT.get(id);
     const response = await durableObject.fetch(request);
     return response;
   },
